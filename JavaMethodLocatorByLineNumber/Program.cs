@@ -21,8 +21,11 @@ namespace JavaMethodLocatorByLineNumber {
                 ExitShowingUsage();
             }
 
-            var node = JavaMethodLocator.Locate(fileInfo, lineNumber);
-            Console.WriteLine(node.Name);
+            var fullName = JavaMethodLocator.GetFullMethodName(fileInfo, lineNumber);
+            if (fullName == null) {
+                Environment.Exit(-1);
+            }
+            Console.WriteLine(fullName);
         }
     }
 }

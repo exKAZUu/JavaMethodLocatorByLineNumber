@@ -11,8 +11,24 @@ namespace JavaMethodLocatorByLineNumber.Tests
     public class JavaMethodLocatorTest
     {
         [Test]
-        public void Test() {
-            var node = JavaMethodLocator.Locate(@"//test
+        [TestCase(0, ExpectedResult = null)]
+        [TestCase(1, ExpectedResult = null)]
+        [TestCase(2, ExpectedResult = null)]
+        [TestCase(3, ExpectedResult = null)]
+        [TestCase(4, ExpectedResult = null)]
+        [TestCase(5, ExpectedResult = null)]
+        [TestCase(6, ExpectedResult = "com.test.hello.Hello.Hello")]
+        [TestCase(7, ExpectedResult = "com.test.hello.Hello.Hello")]
+        [TestCase(8, ExpectedResult = "com.test.hello.Hello.Hello")]
+        [TestCase(9, ExpectedResult = "com.test.hello.Hello.Hello")]
+        [TestCase(10, ExpectedResult = null)]
+        [TestCase(11, ExpectedResult = "com.test.hello.Hello.main")]
+        [TestCase(12, ExpectedResult = "com.test.hello.Hello.main")]
+        [TestCase(13, ExpectedResult = "com.test.hello.Hello.main")]
+        [TestCase(14, ExpectedResult = null)]
+        public string Test(int lineNumber) {
+            return JavaMethodLocator.GetFullMethodName(@"//test
+package com.test.hello;
 import javax.swing.*;
  
 public class Hello extends JFrame {
@@ -24,9 +40,7 @@ public class Hello extends JFrame {
     public static void main(String[] args) {
         new Hello().setVisible(true);
     }
-}", 10);
-            var methodName = JavaMethodLocator.GetMethodName(node);
-            Assert.That(methodName, Is.EqualTo("main"));
+}", lineNumber);
         }
     }
 }

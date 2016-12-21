@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Code2Xml.Core.Generators.ANTLRv4.Java;
@@ -8,7 +9,19 @@ using Paraiba.Text;
 
 namespace JavaMethodLocatorByLineNumber {
     public static class JavaMethodLocator {
-        private static CstNode Locate(CstNode tree, string code, int lineNumber) {
+        private static bool HasMethodName(CstNode node) {
+            var firstChild = node.FirstChild;
+            if (firstChild.Name == "classMemberDeclaration") {
+                if (firstChild.FirstChild.Name == "methodDeclaration") {
+                    return true;
+                }
+            } else if (firstChild.Name == "constructorDeclaration") {
+                return true;
+            }
+            return false;
+        }
+
+        private static CstNode LocateConstructorOrMethod(CstNode tree, string code, int lineNumber) {
             if (lineNumber <= 0) {
                 return null;
             }
@@ -33,32 +46,21 @@ namespace JavaMethodLocatorByLineNumber {
                     return null;
                 }
             }
+
             var codeRange = new CodeRange(new CodeLocation(lineNumber, startPos),
                 new CodeLocation(lineNumber, endPos));
             var node = codeRange.FindOutermostNode(tree);
             while (node != null && node.Name != "classBodyDeclaration") {
                 node = node.Parent;
             }
-            return node;
-        }
-
-        private static bool HasMethodName(CstNode node) {
-            var firstChild = node.FirstChild;
-            if (firstChild.Name == "classMemberDeclaration") {
-                if (firstChild.FirstChild.Name == "methodDeclaration") {
-                    return true;
-                }
-            } else if (firstChild.Name == "constructorDeclaration") {
-                return true;
-            }
-            return false;
-        }
-
-        private static string GetFullMethodName(CstNode tree, CstNode node) {
-            if (!HasMethodName(node)) {
+            if (node == null || !HasMethodName(node)) {
                 return null;
             }
 
+            return node;
+        }
+
+        private static string GetFullMethodName(CstNode tree, CstNode node) {
             var names = new List<string>();
             if (tree.FirstChild.Name == "packageDeclaration") {
                 names.AddRange(tree.FirstChild.Children("Identifier").Select(n => n.TokenText));
@@ -79,7 +81,7 @@ namespace JavaMethodLocatorByLineNumber {
             var code = GuessEncoding.ReadAllText(fileInfo.FullName);
             var cstGen = new JavaCstGenerator();
             var tree = cstGen.GenerateTreeFromCodeText(code);
-            var node = Locate(tree, code, lineNumber);
+            var node = LocateConstructorOrMethod(tree, code, lineNumber);
             if (node == null) {
                 return null;
             }
@@ -89,11 +91,30 @@ namespace JavaMethodLocatorByLineNumber {
         public static string GetFullMethodName(string code, int lineNumber) {
             var cstGen = new JavaCstGenerator();
             var tree = cstGen.GenerateTreeFromCodeText(code);
-            var node = Locate(tree, code, lineNumber);
+            var node = LocateConstructorOrMethod(tree, code, lineNumber);
             if (node == null) {
                 return null;
             }
             return GetFullMethodName(tree, node);
+        }
+
+        private static IEnumerable<CstNode> FindConstructorsAndMethods(CstNode tree) {
+            return tree.Descendants().Where(node =>
+                        node.Name == "methodDeclaration" || node.Name == "constructorDeclaration");
+        }
+
+        public static IEnumerable<Tuple<CodeRange, string>> GetCodeRangeAndFullNames(string code) {
+            var cstGen = new JavaCstGenerator();
+            var tree = cstGen.GenerateTreeFromCodeText(code);
+            return FindConstructorsAndMethods(tree)
+                    .Select(node =>
+                                Tuple.Create(CodeRange.Locate(node), GetFullMethodName(tree, node)));
+        }
+
+        public static IEnumerable<Tuple<CodeRange, string>> GetCodeRangeAndFullNames(
+            FileInfo fileInfo) {
+            var code = GuessEncoding.ReadAllText(fileInfo.FullName);
+            return GetCodeRangeAndFullNames(code);
         }
     }
 }

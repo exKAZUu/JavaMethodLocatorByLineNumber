@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using NUnit.Framework;
 
-namespace JavaMethodLocatorByLineNumber.Tests
-{
+namespace JavaMethodLocatorByLineNumber.Tests {
     [TestFixture]
-    public class JavaMethodLocatorTest
-    {
+    public class JavaMethodLocatorTest {
         [Test]
         [TestCase(0, ExpectedResult = null)]
         [TestCase(1, ExpectedResult = null)]
@@ -25,8 +19,9 @@ namespace JavaMethodLocatorByLineNumber.Tests
         [TestCase(11, ExpectedResult = "com.test.hello.Hello.main")]
         [TestCase(12, ExpectedResult = "com.test.hello.Hello.main")]
         [TestCase(13, ExpectedResult = "com.test.hello.Hello.main")]
-        [TestCase(14, ExpectedResult = null)]
-        public string Test(int lineNumber) {
+        [TestCase(14, ExpectedResult = "com.test.hello.Hello.main")]
+        [TestCase(15, ExpectedResult = null)]
+        public string GetFullMethodNameByLineNumber(int lineNumber) {
             return JavaMethodLocator.GetFullMethodName(@"//test
 package com.test.hello;
 import javax.swing.*;
@@ -37,10 +32,37 @@ public class Hello extends JFrame {
         pack(); // pack();
     }
  
+    @Override
     public static void main(String[] args) {
         new Hello().setVisible(true);
     }
 }", lineNumber);
+        }
+
+        [Test]
+        public void ListUpCodeRangeAndFullMethodName() {
+            var rangeAndNames = JavaMethodLocator.GetCodeRangeAndFullNames(@"//test
+package com.test.hello;
+import javax.swing.*;
+ 
+public class Hello extends JFrame {
+    Hello() /*test*/ {
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        pack(); // pack();
+    }
+
+    @Override
+    public static void main(String[] args) {
+        new Hello().setVisible(true);
+    }
+}").ToList();
+            Assert.That(rangeAndNames.Count, Is.EqualTo(2));
+            Assert.That(rangeAndNames[0].Item1.StartLine, Is.EqualTo(6));
+            Assert.That(rangeAndNames[0].Item1.EndLine, Is.EqualTo(9));
+            Assert.That(rangeAndNames[0].Item2, Is.EqualTo("com.test.hello.Hello.Hello"));
+            Assert.That(rangeAndNames[1].Item1.StartLine, Is.EqualTo(11));
+            Assert.That(rangeAndNames[1].Item1.EndLine, Is.EqualTo(14));
+            Assert.That(rangeAndNames[1].Item2, Is.EqualTo("com.test.hello.Hello.main"));
         }
     }
 }

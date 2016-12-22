@@ -5,6 +5,7 @@ using System.Linq;
 using Code2Xml.Core.Generators.ANTLRv4.Java;
 using Code2Xml.Core.Location;
 using Code2Xml.Core.SyntaxTree;
+using Paraiba.Core;
 using Paraiba.Text;
 
 namespace JavaMethodLocatorByLineNumber {
@@ -60,7 +61,7 @@ namespace JavaMethodLocatorByLineNumber {
             return node;
         }
 
-        private static string GetFullMethodName(CstNode tree, CstNode node) {
+        private static string GetFullMethodNameWithParameterTypes(CstNode tree, CstNode node) {
             var names = new List<string>();
             if (tree.FirstChild.Name == "packageDeclaration") {
                 names.AddRange(tree.FirstChild.Children("Identifier").Select(n => n.TokenText));
@@ -69,15 +70,19 @@ namespace JavaMethodLocatorByLineNumber {
                 node.Ancestors()
                         .Where(n => n.Name == "classDeclaration" || n.Name == "interfaceDeclaration")
                         .Select(n => n.Descendants("Identifier").First().TokenText));
-            names.Add(node
+            var declarator = node
                     .Descendants()
-                    .Where(n => n.Name == "methodDeclarator" || n.Name == "constructorDeclarator")
+                    .First(n => n.Name == "methodDeclarator" || n.Name == "constructorDeclarator");
+            names.Add(declarator
                     .Descendants("Identifier")
                     .First().TokenText);
-            return string.Join(".", names);
+            return Enumerable.Repeat(string.Join(".", names), 1)
+                    .Concat(declarator.Descendants("formalParameter")
+                            .Select(n => n.Children("unannType").First().TokenText))
+                    .JoinString(",");
         }
 
-        public static string GetFullMethodName(FileInfo fileInfo, int lineNumber) {
+        public static string GetFullMethodNameWithParameterTypes(FileInfo fileInfo, int lineNumber) {
             var code = GuessEncoding.ReadAllText(fileInfo.FullName);
             var cstGen = new JavaCstGenerator();
             var tree = cstGen.GenerateTreeFromCodeText(code);
@@ -85,17 +90,17 @@ namespace JavaMethodLocatorByLineNumber {
             if (node == null) {
                 return null;
             }
-            return GetFullMethodName(tree, node);
+            return GetFullMethodNameWithParameterTypes(tree, node);
         }
 
-        public static string GetFullMethodName(string code, int lineNumber) {
+        public static string GetFullMethodNameWithParameterTypes(string code, int lineNumber) {
             var cstGen = new JavaCstGenerator();
             var tree = cstGen.GenerateTreeFromCodeText(code);
             var node = LocateConstructorOrMethod(tree, code, lineNumber);
             if (node == null) {
                 return null;
             }
-            return GetFullMethodName(tree, node);
+            return GetFullMethodNameWithParameterTypes(tree, node);
         }
 
         private static IEnumerable<CstNode> FindConstructorsAndMethods(CstNode tree) {
@@ -103,18 +108,19 @@ namespace JavaMethodLocatorByLineNumber {
                         node.Name == "methodDeclaration" || node.Name == "constructorDeclaration");
         }
 
-        public static IEnumerable<Tuple<CodeRange, string>> GetCodeRangeAndFullNames(string code) {
+        public static IEnumerable<Tuple<CodeRange, string>>
+                GetCodeRangeAndFullNameWihtParameterTypes(string code) {
             var cstGen = new JavaCstGenerator();
             var tree = cstGen.GenerateTreeFromCodeText(code);
-            return FindConstructorsAndMethods(tree)
-                    .Select(node =>
-                                Tuple.Create(CodeRange.Locate(node), GetFullMethodName(tree, node)));
+            return FindConstructorsAndMethods(tree).Select(node =>
+                Tuple.Create(CodeRange.Locate(node),
+                    GetFullMethodNameWithParameterTypes(tree, node)));
         }
 
-        public static IEnumerable<Tuple<CodeRange, string>> GetCodeRangeAndFullNames(
-            FileInfo fileInfo) {
+        public static IEnumerable<Tuple<CodeRange, string>>
+                GetCodeRangeAndFullNameWihtParameterTypes(FileInfo fileInfo) {
             var code = GuessEncoding.ReadAllText(fileInfo.FullName);
-            return GetCodeRangeAndFullNames(code);
+            return GetCodeRangeAndFullNameWihtParameterTypes(code);
         }
     }
 }

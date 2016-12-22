@@ -11,23 +11,23 @@ namespace JavaMethodLocatorByLineNumber.Tests {
         [TestCase(3, ExpectedResult = null)]
         [TestCase(4, ExpectedResult = null)]
         [TestCase(5, ExpectedResult = null)]
-        [TestCase(6, ExpectedResult = "com.test.hello.Hello.Hello")]
-        [TestCase(7, ExpectedResult = "com.test.hello.Hello.Hello")]
-        [TestCase(8, ExpectedResult = "com.test.hello.Hello.Hello")]
-        [TestCase(9, ExpectedResult = "com.test.hello.Hello.Hello")]
+        [TestCase(6, ExpectedResult = "com.test.hello.Hello.Hello,int,int")]
+        [TestCase(7, ExpectedResult = "com.test.hello.Hello.Hello,int,int")]
+        [TestCase(8, ExpectedResult = "com.test.hello.Hello.Hello,int,int")]
+        [TestCase(9, ExpectedResult = "com.test.hello.Hello.Hello,int,int")]
         [TestCase(10, ExpectedResult = null)]
-        [TestCase(11, ExpectedResult = "com.test.hello.Hello.main")]
-        [TestCase(12, ExpectedResult = "com.test.hello.Hello.main")]
-        [TestCase(13, ExpectedResult = "com.test.hello.Hello.main")]
-        [TestCase(14, ExpectedResult = "com.test.hello.Hello.main")]
+        [TestCase(11, ExpectedResult = "com.test.hello.Hello.main,String[]")]
+        [TestCase(12, ExpectedResult = "com.test.hello.Hello.main,String[]")]
+        [TestCase(13, ExpectedResult = "com.test.hello.Hello.main,String[]")]
+        [TestCase(14, ExpectedResult = "com.test.hello.Hello.main,String[]")]
         [TestCase(15, ExpectedResult = null)]
         public string GetFullMethodNameByLineNumber(int lineNumber) {
-            return JavaMethodLocator.GetFullMethodName(@"//test
+            return JavaMethodLocator.GetFullMethodNameWithParameterTypes(@"//test
 package com.test.hello;
 import javax.swing.*;
  
 public class Hello extends JFrame {
-    Hello() /*test*/ {
+    Hello(int a, int b) /*test*/ {
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         pack(); // pack();
     }
@@ -41,7 +41,7 @@ public class Hello extends JFrame {
 
         [Test]
         public void ListUpCodeRangeAndFullMethodName() {
-            var rangeAndNames = JavaMethodLocator.GetCodeRangeAndFullNames(@"//test
+            var rangeAndNames = JavaMethodLocator.GetCodeRangeAndFullNameWihtParameterTypes(@"//test
 package com.test.hello;
 import javax.swing.*;
  
@@ -62,7 +62,7 @@ public class Hello extends JFrame {
             Assert.That(rangeAndNames[0].Item2, Is.EqualTo("com.test.hello.Hello.Hello"));
             Assert.That(rangeAndNames[1].Item1.StartLine, Is.EqualTo(11));
             Assert.That(rangeAndNames[1].Item1.EndLine, Is.EqualTo(14));
-            Assert.That(rangeAndNames[1].Item2, Is.EqualTo("com.test.hello.Hello.main"));
+            Assert.That(rangeAndNames[1].Item2, Is.EqualTo("com.test.hello.Hello.main,String[]"));
         }
     }
 }

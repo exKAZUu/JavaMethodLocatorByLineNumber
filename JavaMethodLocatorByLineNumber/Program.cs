@@ -22,13 +22,13 @@ namespace JavaMethodLocatorByLineNumber {
                     ExitShowingUsage();
                 }
 
-                var fullName = JavaMethodLocator.GetFullMethodName(fileInfo, lineNumber);
+                var fullName = JavaMethodLocator.GetFullMethodNameWithParameterTypes(fileInfo, lineNumber);
                 if (fullName == null) {
                     Environment.Exit(-1);
                 }
                 Console.WriteLine(fullName);
             } else {
-                foreach (var rangeAndName in JavaMethodLocator.GetCodeRangeAndFullNames(fileInfo)) {
+                foreach (var rangeAndName in JavaMethodLocator.GetCodeRangeAndFullNameWihtParameterTypes(fileInfo)) {
                     Console.WriteLine("{0},{1},{2}",
                         rangeAndName.Item1.StartLine, rangeAndName.Item1.EndLine, rangeAndName.Item2);
                 }

@@ -43,26 +43,28 @@ public class Hello extends JFrame {
         public void ListUpCodeRangeAndFullMethodName() {
             var rangeAndNames = JavaMethodLocator.GetCodeRangeAndFullNameWihtParameterTypes(@"//test
 package com.test.hello;
-import javax.swing.*;
  
-public class Hello extends JFrame {
-    Hello() /*test*/ {
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        pack(); // pack();
-    }
+public class Hello {
+    Hello() { }
 
-    @Override
-    public static void main(String[] args) {
+    @Override public static void main(String[] args) {
         new Hello().setVisible(true);
     }
+
+    class World {
+        void someMethod(int a, String ... ss) { }
+    }
 }").ToList();
-            Assert.That(rangeAndNames.Count, Is.EqualTo(2));
-            Assert.That(rangeAndNames[0].Item1.StartLine, Is.EqualTo(6));
-            Assert.That(rangeAndNames[0].Item1.EndLine, Is.EqualTo(9));
+            Assert.That(rangeAndNames.Count, Is.EqualTo(3));
+            Assert.That(rangeAndNames[0].Item1.StartLine, Is.EqualTo(5));
+            Assert.That(rangeAndNames[0].Item1.EndLine, Is.EqualTo(5));
             Assert.That(rangeAndNames[0].Item2, Is.EqualTo("com.test.hello.Hello.Hello"));
-            Assert.That(rangeAndNames[1].Item1.StartLine, Is.EqualTo(11));
-            Assert.That(rangeAndNames[1].Item1.EndLine, Is.EqualTo(14));
+            Assert.That(rangeAndNames[1].Item1.StartLine, Is.EqualTo(7));
+            Assert.That(rangeAndNames[1].Item1.EndLine, Is.EqualTo(9));
             Assert.That(rangeAndNames[1].Item2, Is.EqualTo("com.test.hello.Hello.main,String[]"));
+            Assert.That(rangeAndNames[2].Item1.StartLine, Is.EqualTo(12));
+            Assert.That(rangeAndNames[2].Item1.EndLine, Is.EqualTo(12));
+            Assert.That(rangeAndNames[2].Item2, Is.EqualTo("com.test.hello.Hello.World.someMethod,int,String[]"));
         }
     }
 }

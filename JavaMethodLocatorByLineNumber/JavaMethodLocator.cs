@@ -6,6 +6,7 @@ using Code2Xml.Core.Generators.ANTLRv4.Java;
 using Code2Xml.Core.Location;
 using Code2Xml.Core.SyntaxTree;
 using Paraiba.Core;
+using Paraiba.Linq;
 using Paraiba.Text;
 
 namespace JavaMethodLocatorByLineNumber {
@@ -69,7 +70,8 @@ namespace JavaMethodLocatorByLineNumber {
             names.AddRange(
                 node.Ancestors()
                         .Where(n => n.Name == "classDeclaration" || n.Name == "interfaceDeclaration")
-                        .Select(n => n.Descendants("Identifier").First().TokenText));
+                        .Select(n => n.Descendants("Identifier").First().TokenText)
+                        .Reverse());
             var declarator = node
                     .Descendants()
                     .First(n => n.Name == "methodDeclarator" || n.Name == "constructorDeclarator");
@@ -77,8 +79,15 @@ namespace JavaMethodLocatorByLineNumber {
                     .Descendants("Identifier")
                     .First().TokenText);
             return Enumerable.Repeat(string.Join(".", names), 1)
-                    .Concat(declarator.Descendants("formalParameter")
-                            .Select(n => n.Children("unannType").First().TokenText))
+                    .Concat(declarator.Descendants()
+                            .Where(n => n.Name == "formalParameter" ||
+                                        (n.Name == "lastFormalParameter"
+                                         && n.Children("formalParameter").IsEmpty()))
+                            .Select(n => {
+                                var unannType = n.Children("unannType").First();
+                                return unannType.TokenText
+                                       + (unannType.Next.TokenText.Trim() == "..." ? "[]" : "");
+                            }))
                     .JoinString(",");
         }
 
